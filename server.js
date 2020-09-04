@@ -1,4 +1,7 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
+//Must be installed to link frontend to backend
+const cors = require('cors');
 
 const app = express();
 //Allows you to read json values (needed in every project)
@@ -22,16 +25,35 @@ const database = {
 			entries: 0,
 			joined: new Date()
 		}
+	],
+	login: [
+		{
+			id: '987',
+			hash: '',
+			email: 'john@gmail.com'
+		}
 	]
 }
+
+app.use(cors());
 
 app.get('/', (req, res) => {
 	res.json(database.users);
 })
 
 app.post('/signin', (req, res)=> {
+	// Load hash from your password DB.
+	bcrypt.compare("apples", '$2a$10$W2bmwBTPlFubg4zE/k3HEuO8khymQ6.OXEQOHfIJ1oV3/wSAIxEh.', function(err, res) {
+		// res === true
+		console.log('first guess', res)
+	});
+	bcrypt.compare("not_bacon", '$2a$10$W2bmwBTPlFubg4zE/k3HEuO8khymQ6.OXEQOHfIJ1oV3/wSAIxEh.', function(err, res) {
+		// res === false
+		console.log('second guess', res)
+	});
+
 	if (req.body.email === database.users[0].email && req.body.password === database.users[0].password) {
-		res.json('success');
+		res.json(database.users[0]);
 	} else {
 		res.status(400).json('Error logging in')
 	}
@@ -39,11 +61,14 @@ app.post('/signin', (req, res)=> {
 
 app.post('/register', (req, res) => {
 	const { email, name, password } = req.body;
+	const salt = bcrypt.genSaltSync(10);
+	const hash = bcrypt.hashSync("B4c0/\/", salt);
+	console.log(hash);
+	// Store hash in your password DB.
 	database.users.push({
 		id: '125',
 		name: name,
 		email: email,
-		password: password,
 		entries: 0,
 		joined: new Date()
 	})
@@ -64,7 +89,7 @@ app.get('/profile/:id', (req, res) => {
 	}
 })
 
-app.post('/image', (req, res) => {
+app.put('/image', (req, res) => {
 	const { id } = req.body;
 	let found = false;
 	database.users.forEach(user => {
@@ -78,6 +103,12 @@ app.post('/image', (req, res) => {
 		res.status(404).json('No such user')
 	}
 })
+
+
+
+
+
+// var hash = bcrypt.hashSync('bacon', 8);
 
 app.listen(3000, () => {
 	console.log('App is running on port 3000')
